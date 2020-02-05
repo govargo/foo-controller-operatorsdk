@@ -84,6 +84,7 @@ type ReconcileFoo struct {
 func (r *ReconcileFoo) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling Foo")
+	ctx := context.Background()
 
 	// Fetch the Foo instance
 	instance := &samplecontrollerv1alpha1.Foo{}
