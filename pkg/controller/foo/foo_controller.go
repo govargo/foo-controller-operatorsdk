@@ -123,6 +123,46 @@ func (r *ReconcileFoo) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, err
 	}
 
+	/*
+		### 3: Create deployment if foo doesn't have it.
+		We will get deployment which have foo.spec.deploymentName.
+		If it doesn't exist, we'll use Create method.
+	*/
+
+	// get deploymentName from foo.Spec
+	deploymentName := foo.Spec.DeploymentName
+
+	// define deployment template using deploymentName
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      deploymentName,
+			Namespace: request.Namespace,
+		},
+	}
+
+	// create deployment which has deploymentName and replicas by newDeployment method if it doesn't exist
+	if err := r.client.Get(ctx, client.ObjectKey{Namespace: foo.Namespace, Name: deploymentName}, deployment); err != nil {
+		if errors.IsNotFound(err) {
+			reqLogger.Info("could not find existing Deployment for Foo, creating one...")
+			// create deployment template using newDeployment method
+			deployment = newDeployment(foo)
+
+			// create deployment object
+			if err := r.client.Create(ctx, deployment); err != nil {
+				reqLogger.Error(err, "failed to create Deployment resource")
+				// Error creating the object - requeue the request.
+				return reconcile.Result{}, err
+			}
+
+			reqLogger.Info("created Deployment resource for Foo")
+			return reconcile.Result{}, nil
+		}
+
+		reqLogger.Error(err, "failed to get Deployment for Foo resource")
+		// Error reading the object - requeue the request.
+		return reconcile.Result{}, err
+	}
+
 	return reconcile.Result{}, nil
 }
 
