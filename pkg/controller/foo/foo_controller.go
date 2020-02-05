@@ -184,6 +184,28 @@ func (r *ReconcileFoo) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, nil
 	}
 
+	/*
+		### 5: Update foo status.
+		if foo.Status.AvailableReplicas doesn't match deployment.Status.AvailableReplicas,
+		we need to update foo.Status.AvailableReplicas.
+		we will use Update method to reconcile foo state.
+	*/
+
+	// compare foo.status.availableReplicas and deployment.status.availableReplicas
+	if foo.Status.AvailableReplicas != deployment.Status.AvailableReplicas {
+
+		reqLogger.Info("updating Foo status")
+		foo.Status.AvailableReplicas = deployment.Status.AvailableReplicas
+		// Update foo spec
+		if err := r.client.Update(ctx, foo); err != nil {
+			reqLogger.Error(err, "failed to update Foo status")
+			// Error updating the object - requeue the request.
+			return reconcile.Result{}, err
+		}
+
+		reqLogger.Info("updated Foo status", "foo.status.availableReplicas", foo.Status.AvailableReplicas)
+	}
+
 	return reconcile.Result{}, nil
 }
 
