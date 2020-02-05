@@ -113,3 +113,48 @@ func (r *ReconcileFoo) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	return reconcile.Result{}, nil
 }
+
+// cleanupOwnedResources will Delete any existing Deployment resources that
+// were created for the given Foo that no longer match the
+// foo.spec.deploymentName field.
+func (r *ReconcileFoo) cleanupOwnedResources(ctx context.Context, foo *samplecontrollerv1alpha1.Foo) error {
+	reqLogger := log.WithValues("Request.Namespace", foo.Namespace, "Request.Name", foo.Name)
+	reqLogger.Info("finding existing Deployments for Foo resource")
+
+	// List all deployment resources owned by this Foo
+	deployments := &appsv1.DeploymentList{}
+	labelSelector := labels.SelectorFromSet(labelsForFoo(foo.Name))
+	listOps := &client.ListOptions{
+		Namespace:     foo.Namespace,
+		LabelSelector: labelSelector,
+	}
+	if err := r.client.List(ctx, deployments, listOps); err != nil{
+		reqLogger.Error(err,"faild to get list of deployments")
+		return err
+	}
+
+	// Delete deployment if the deployment name doesn't match foo.spec.deploymentName
+	for _, deployment := range deployments.Items {
+		if deployment.Name == foo.Spec.DeploymentName {
+			// If this deployment's name matches the one on the Foo resource
+			// then do not delete it.
+			continue
+		}
+
+		// Delete old deployment object which doesn't match foo.spec.deploymentName
+		if err := r.client.Delete(ctx, &deployment); err != nil {
+			reqLogger.Error(err, "failed to delete Deployment resource")
+			return err
+		}
+
+		reqLogger.Info("deleted old Deployment resource for Foo", "deploymentName", deployment.Name)
+	}
+
+	return nil
+}
+
+// labelsForFoo returns the labels for selecting the resources
+// belonging to the given foo CR name.
+func labelsForFoo(name string) map[string]string {
+	return map[string]string{"app": "nginx", "controller": name}
+}
