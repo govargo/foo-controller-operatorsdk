@@ -1,0 +1,1 @@
+# foo-controller-operatorsdk
