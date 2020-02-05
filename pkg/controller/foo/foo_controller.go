@@ -111,6 +111,18 @@ func (r *ReconcileFoo) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, err
 	}
 
+	/*
+		### 2: Clean Up old Deployment which had been owned by Foo Resource.
+		We'll find deployment object which foo object owns.
+		If there is a deployment which is owned by foo and it doesn't match foo.spec.deploymentName,
+		we clean up the deployment object.
+		(If we do nothing without this func, the old deployment object keeps existing.)
+	*/
+	if err := r.cleanupOwnedResources(ctx, foo); err != nil {
+		reqLogger.Error(err, "failed to clean up old Deployment resources for this Foo")
+		return reconcile.Result{}, err
+	}
+
 	return reconcile.Result{}, nil
 }
 
