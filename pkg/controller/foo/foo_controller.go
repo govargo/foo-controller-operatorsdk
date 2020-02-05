@@ -170,3 +170,39 @@ func (r *ReconcileFoo) cleanupOwnedResources(ctx context.Context, foo *samplecon
 func labelsForFoo(name string) map[string]string {
 	return map[string]string{"app": "nginx", "controller": name}
 }
+
+// newDeployment creates a new Deployment for a Foo resource. It also sets
+// the appropriate OwnerReferences on the resource so handleObject can discover
+// the Foo resource that 'owns' it.
+func newDeployment(foo *samplecontrollerv1alpha1.Foo) *appsv1.Deployment {
+	labels := labelsForFoo(foo.Name)
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      foo.Spec.DeploymentName,
+			Namespace: foo.Namespace,
+			Labels:    labels,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(foo, samplecontrollerv1alpha1.SchemeGroupVersion.WithKind("Foo")),
+			},
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: foo.Spec.Replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: labels,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "nginx",
+							Image: "nginx:latest",
+						},
+					},
+				},
+			},
+		},
+	}
+}
