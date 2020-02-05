@@ -16,7 +16,7 @@ spec:
       containers:
         - name: foo-controller-operatorsdk
           # Replace this with the built image name
-          image: REPLACE_IMAGE
+          image: govargo/foo-controller:operatorsdk
           command:
           - foo-controller-operatorsdk
           imagePullPolicy: Always
