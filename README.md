@@ -2,7 +2,7 @@
 
 This Controller is developed by Operator SDK v0.15.1
 
-インプレスR&D NextPublishing「実践入門 Kubernetesカスタムコントローラへの道」の第六章に掲載したサンプルコード用のリポジトリです。
+インプレスR&D NextPublishing「実践入門 Kubernetesカスタムコントローラーへの道」の第六章に掲載したサンプルコード用のリポジトリです。
 
 ## What is this Controller
 
